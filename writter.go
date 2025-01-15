@@ -14,6 +14,10 @@ type datalayerWritter struct {
 	clientConfig *otel2datalayers.ClientConfig
 	client       *otel2datalayers.Client
 
+	db      string
+	table   string
+	columns map[string]string
+
 	telemetrySettings component.TelemetrySettings
 	payloadMaxLines   int
 	payloadMaxBytes   int
@@ -35,8 +39,12 @@ func newDatalayerWritter(logger otel2datalayers.Logger, config *Config, telemetr
 	}
 
 	return &datalayerWritter{
-		clientConfig:      clientConfig,
-		client:            c,
+		clientConfig: clientConfig,
+		client:       c,
+		db:           config.DB,
+		table:        config.Table,
+		columns:      config.Columns,
+
 		telemetrySettings: telemetrySettings,
 		payloadMaxLines:   config.PayloadMaxLines,
 		payloadMaxBytes:   config.PayloadMaxBytes,
@@ -46,7 +54,7 @@ func newDatalayerWritter(logger otel2datalayers.Logger, config *Config, telemetr
 
 // Start implements component.StartFunc
 func (w *datalayerWritter) Start(ctx context.Context, host component.Host) error {
-	// TODO: init the client
-	// w.httpClient = httpClient
+	// TODO: to check the database and tables is existed? Create without existing.
+
 	return nil
 }

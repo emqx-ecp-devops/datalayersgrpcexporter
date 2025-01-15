@@ -59,6 +59,10 @@ type Config struct {
 
 	// DB is used to specify the name of the V1 InfluxDB database that telemetry will be written to.
 	DB string `mapstructure:"db"`
+	// Table is the name of the Datalayers table that telemetry will be written to.
+	Table string `mapstructure:"table"`
+	// Columns is the mapping of span attribute keys to Datalayers column names.
+	Columns map[string]string `mapstructure:"columns"`
 	// Username is used to optionally specify the basic auth username
 	Username string `mapstructure:"username"`
 	// Password is used to optionally specify the basic auth password
