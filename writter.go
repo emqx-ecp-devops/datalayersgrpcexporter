@@ -66,6 +66,7 @@ func (w *datalayerWritter) Start(ctx context.Context, host component.Host) error
 	}
 
 	// Creates a table.
+	// If w.colums is empty, will use the automatic schema later. It will use all metrics as fields.
 	columsStr := ""
 	if len(w.columns) > 0 {
 		for k, v := range w.columns {
