@@ -86,5 +86,7 @@ func (w *datalayerWritter) Start(ctx context.Context, host component.Host) error
 		return err
 	}
 
+	go otel2datalayers.ProcessMetrics()
+
 	return nil
 }

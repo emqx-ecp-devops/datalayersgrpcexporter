@@ -2,8 +2,8 @@ package otel2datalayers
 
 import (
 	"context"
+	"fmt"
 
-	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -35,22 +35,67 @@ var MetricsSchemata = map[string]MetricsSchema{
 	MetricsSchemaOtelV1.String():               MetricsSchemaOtelV1,
 }
 
-type OtelMetricsToLineProtocol struct {
-	iw InfluxWriter
-	mw metricWriter
-}
-
-type metricWriter interface {
-	enqueueMetric(ctx context.Context, resource pcommon.Resource, instrumentationScope pcommon.InstrumentationScope, metric pmetric.Metric, batch InfluxWriterBatch) error
+// use to store metrics data for temporary
+type MetricsMultipleLines []MetricsSingleLine
+type MetricsSingleLine struct {
+	Key      string
+	Value    interface{}
+	Type     int32
+	Metadata map[string]any
 }
 
 func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
-	// TODO: add metrics processing
+	// TODO: add metrics processing, Splice SQL and store it in datalayers.
+	newLines := MetricsMultipleLines{}
+	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		rm := md.ResourceMetrics().At(i)
+		for j := 0; j < rm.ScopeMetrics().Len(); j++ {
+			ilm := rm.ScopeMetrics().At(j)
+			for k := 0; k < ilm.Metrics().Len(); k++ {
+				m := ilm.Metrics().At(k)
+
+				metricsSingleLine := MetricsSingleLine{
+					Key:      m.Name(),
+					Type:     int32(m.Type()),
+					Metadata: m.Metadata().AsRaw(),
+				}
+
+				switch m.Type() {
+				case pmetric.MetricTypeGauge:
+					metricsSingleLine.Value = m.Gauge().DataPoints().At(0).DoubleValue()
+				case pmetric.MetricTypeSum:
+					metricsSingleLine.Value = m.Sum().DataPoints().At(0).DoubleValue()
+				case pmetric.MetricTypeHistogram:
+					metricsSingleLine.Value = m.Histogram().DataPoints().At(0).Sum()
+				case pmetric.MetricTypeSummary:
+					metricsSingleLine.Value = m.Summary().DataPoints().At(0).Sum()
+				case pmetric.MetricTypeExponentialHistogram:
+					metricsSingleLine.Value = m.ExponentialHistogram().DataPoints().At(0).Sum()
+				default:
+					metricsSingleLine.Value = nil
+				}
+
+				newLines = append(newLines, metricsSingleLine)
+			}
+		}
+	}
+
+	enqueueNewlines(newLines)
 	return nil
 }
 
-type basicDataPoint interface {
-	Timestamp() pcommon.Timestamp
-	StartTimestamp() pcommon.Timestamp
-	Attributes() pcommon.Map
+var metricQueue = make(chan MetricsMultipleLines, 1000)
+
+func enqueueNewlines(metrics MetricsMultipleLines) {
+	metricQueue <- metrics
+}
+
+func ProcessMetrics() {
+	for {
+		select {
+		case metrics := <-metricQueue:
+			// TODO: to write metrics to datalayers.
+			fmt.Println("Received metrics: ", metrics)
+		}
+	}
 }
