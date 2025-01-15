@@ -5,13 +5,10 @@ package datalayersexporter
 
 import (
 	"context"
-	"time"
 
 	"github.com/emqx-ecp-devops/datalayersexporter/internal/metadata"
 	"github.com/emqx-ecp-devops/datalayersexporter/internal/otel2datalayers"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
@@ -30,12 +27,7 @@ func NewFactory() exporter.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		ClientConfig: confighttp.ClientConfig{
-			Timeout: 5 * time.Second,
-			Headers: map[string]configopaque.String{
-				"User-Agent": "OpenTelemetry -> Datalayers",
-			},
-		},
+		Endpoint:      "datalayers:6361",
 		QueueSettings: exporterhelper.NewDefaultQueueSettings(),
 		BackOffConfig: configretry.NewDefaultBackOffConfig(),
 		MetricsSchema: otel2datalayers.MetricsSchemaTelegrafPrometheusV1.String(),

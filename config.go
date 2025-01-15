@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/config/configopaque"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"golang.org/x/exp/maps"
@@ -42,22 +40,29 @@ type CustomTrace struct {
 
 // Config defines configuration for the InfluxDB exporter.
 type Config struct {
-	confighttp.ClientConfig   `mapstructure:",squash"`
+	// confighttp.ClientConfig   `mapstructure:",squash"`
 	QueueSettings             exporterhelper.QueueSettings `mapstructure:"sending_queue"`
 	configretry.BackOffConfig `mapstructure:"retry_on_failure"`
 
-	// Org is the InfluxDB organization name of the destination bucket.
-	Org string `mapstructure:"org"`
-	// Bucket is the InfluxDB bucket name that telemetry will be written to.
-	Bucket string `mapstructure:"bucket"`
-	// Token is used to identify InfluxDB permissions within the organization.
-	Token configopaque.String `mapstructure:"token"`
+	// // Org is the InfluxDB organization name of the destination bucket.
+	// Org string `mapstructure:"org"`
+	// // Bucket is the InfluxDB bucket name that telemetry will be written to.
+	// Bucket string `mapstructure:"bucket"`
+	// // Token is used to identify InfluxDB permissions within the organization.
+	// Token configopaque.String `mapstructure:"token"`
+
+	// Endpoint is the InfluxDB server URL.
+	Endpoint string `mapstructure:"endpoint"`
+
+	// TlsCertPath is the path to the TLS certificate to use for HTTPS requests.
+	TlsCertPath string `mapstructure:"tls_cert_path"`
+
 	// DB is used to specify the name of the V1 InfluxDB database that telemetry will be written to.
 	DB string `mapstructure:"db"`
 	// Username is used to optionally specify the basic auth username
 	Username string `mapstructure:"username"`
 	// Password is used to optionally specify the basic auth password
-	Password configopaque.String `mapstructure:"password"`
+	Password string `mapstructure:"password"`
 
 	Trace Trace `mapstructure:"trace"`
 	// PayloadMaxLines is the maximum number of line protocol lines to POST in a single request.
