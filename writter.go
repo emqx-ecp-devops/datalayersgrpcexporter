@@ -6,6 +6,7 @@ package datalayersexporter
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/emqx-ecp-devops/datalayersexporter/internal/otel2datalayers"
 	"go.opentelemetry.io/collector/component"
@@ -89,4 +90,29 @@ func (w *datalayerWritter) Start(ctx context.Context, host component.Host) error
 	go otel2datalayers.ProcessMetrics()
 
 	return nil
+}
+
+func (w *datalayerWritter) concatenateSql(metrics otel2datalayers.MetricsMultipleLines) {
+	sql := "INSERT INTO %s (%s) VALUES (%s);"
+
+	table := w.db + "." + w.table
+	columns := ""
+	for k, v := range w.columns {
+		columns += fmt.Sprintf("`%s_%s`,", k, v)
+	}
+	columns = strings.TrimSuffix(columns, ",")
+
+	values := ""
+	for _, metric := range metrics {
+		values += fmt.Sprintf("%v,", metric.Value)
+	}
+	values = strings.TrimSuffix(values, ",")
+
+	sql = fmt.Sprintf(sql, table, columns, values)
+	_, err := w.client.Execute(sql)
+	if err != nil {
+		fmt.Println("Failed to insert metrics: ", err)
+		return
+	}
+
 }

@@ -95,6 +95,7 @@ func ProcessMetrics() {
 		select {
 		case metrics := <-metricQueue:
 			// TODO: to write metrics to datalayers.
+
 			fmt.Println("Received metrics: ", metrics)
 		}
 	}
