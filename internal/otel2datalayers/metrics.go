@@ -91,13 +91,14 @@ func enqueueNewlines(metrics MetricsMultipleLines) {
 	metricQueue <- metrics
 }
 
-func ProcessMetrics() {
+func (w *DatalayerWritter) ProcessMetrics(ctx context.Context) {
 	for {
 		select {
 		case metrics := <-metricQueue:
-			// TODO: to write metrics to datalayers.
-
 			fmt.Println("Received metrics: ", metrics)
+			w.concatenateSql(metrics)
+		case <-ctx.Done():
+			return
 		}
 	}
 }

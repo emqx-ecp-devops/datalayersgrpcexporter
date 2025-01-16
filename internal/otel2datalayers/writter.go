@@ -83,7 +83,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 		return err
 	}
 
-	go ProcessMetrics()
+	go w.ProcessMetrics(ctx)
 
 	return nil
 }
