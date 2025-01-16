@@ -1,4 +1,4 @@
-type: datalayers
+type: datalayersgrpc
 
 status:
   class: exporter
