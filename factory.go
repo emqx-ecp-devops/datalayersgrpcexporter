@@ -97,9 +97,7 @@ func createDefaultConfig() component.Config {
 func createMetricsExporter(ctx context.Context, set exporter.Settings, config component.Config) (exporter.Metrics, error) {
 	cfg := config.(*Config)
 
-	logger := newZapInfluxLogger(set.Logger)
-
-	writer, err := newDatalayerWritter(logger, cfg, set.TelemetrySettings)
+	writer, err := newDatalayerWritter(cfg, set.TelemetrySettings)
 	if err != nil {
 		return nil, err
 	}
@@ -144,3 +142,17 @@ func createMetricsExporter(ctx context.Context, set exporter.Settings, config co
 // 		exporterhelper.WithStart(writer.Start),
 // 	)
 // }
+
+func newDatalayerWritter(config *Config, telemetrySettings component.TelemetrySettings) (*otel2datalayers.DatalayerWritter, error) {
+	return otel2datalayers.NewDatalayerWritter(
+		config.Endpoint,
+		config.Username,
+		config.Password,
+		config.TlsCertPath,
+		config.DB,
+		config.Table,
+		config.Columns,
+		config.PayloadMaxLines,
+		config.PayloadMaxBytes,
+		telemetrySettings)
+}

@@ -3,6 +3,7 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -99,4 +100,29 @@ func ProcessMetrics() {
 			fmt.Println("Received metrics: ", metrics)
 		}
 	}
+}
+
+func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
+	sql := "INSERT INTO %s (%s) VALUES (%s);"
+
+	table := w.db + "." + w.table
+	columns := ""
+	for k, v := range w.columns {
+		columns += fmt.Sprintf("`%s_%s`,", k, v)
+	}
+	columns = strings.TrimSuffix(columns, ",")
+
+	values := ""
+	for _, metric := range metrics {
+		values += fmt.Sprintf("%v,", metric.Value)
+	}
+	values = strings.TrimSuffix(values, ",")
+
+	sql = fmt.Sprintf(sql, table, columns, values)
+	_, err := w.client.Execute(sql)
+	if err != nil {
+		fmt.Println("Failed to insert metrics: ", err)
+		return
+	}
+
 }
