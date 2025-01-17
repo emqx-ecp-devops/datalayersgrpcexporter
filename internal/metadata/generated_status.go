@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("datalayers")
-	ScopeName = "github.com/emqx-ecp-devops/datalayersexporter"
+	ScopeName = "github.com/emqx-ecp-devops/datalayersgrpcexporter"
 )
 
 const (

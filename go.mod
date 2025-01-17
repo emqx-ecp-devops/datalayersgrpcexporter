@@ -1,4 +1,4 @@
-module github.com/emqx-ecp-devops/datalayersexporter
+module github.com/emqx-ecp-devops/datalayersgrpcexporter
 
 go 1.22.0
 

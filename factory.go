@@ -6,8 +6,8 @@ package datalayersexporter
 import (
 	"context"
 
-	"github.com/emqx-ecp-devops/datalayersexporter/internal/metadata"
-	"github.com/emqx-ecp-devops/datalayersexporter/internal/otel2datalayers"
+	"github.com/emqx-ecp-devops/datalayersgrpcexporter/internal/metadata"
+	"github.com/emqx-ecp-devops/datalayersgrpcexporter/internal/otel2datalayers"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter"
