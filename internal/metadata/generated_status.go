@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("datalayers")
+	Type      = component.MustNewType("datalayersgrpc")
 	ScopeName = "github.com/emqx-ecp-devops/datalayersgrpcexporter"
 )
 
