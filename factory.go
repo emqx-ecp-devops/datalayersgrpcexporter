@@ -27,7 +27,8 @@ func NewFactory() exporter.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Endpoint:      "datalayers:6361",
+		Host:          "datalayers",
+		Port:          6360,
 		QueueSettings: exporterhelper.NewDefaultQueueSettings(),
 		BackOffConfig: configretry.NewDefaultBackOffConfig(),
 		MetricsSchema: otel2datalayers.MetricsSchemaTelegrafPrometheusV1.String(),
@@ -145,7 +146,7 @@ func createMetricsExporter(ctx context.Context, set exporter.Settings, config co
 
 func newDatalayerWritter(config *Config, telemetrySettings component.TelemetrySettings) (*otel2datalayers.DatalayerWritter, error) {
 	return otel2datalayers.NewDatalayerWritter(
-		config.Endpoint,
+		config.Host,
 		config.Username,
 		config.Password,
 		config.TlsCertPath,
