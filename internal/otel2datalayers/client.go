@@ -36,7 +36,7 @@ func MakeClient(config *ClientConfig) (*Client, error) {
 	addr := fmt.Sprintf("%s:%v", config.Host, config.Port)
 	var dialOpts []grpc.DialOption
 
-	if config.TlsCert != nil {
+	if config.TlsCert != nil && *config.TlsCert != "" {
 		// Load the certificate from the provided path.
 		creds, err := loadTLSCredentials(*config.TlsCert)
 		if err != nil {
