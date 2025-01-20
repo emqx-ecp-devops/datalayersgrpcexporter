@@ -52,7 +52,10 @@ type Config struct {
 	// Token configopaque.String `mapstructure:"token"`
 
 	// Endpoint is the InfluxDB server URL.
-	Endpoint string `mapstructure:"endpoint"`
+	Host string `mapstructure:"host"`
+
+	// Port is the InfluxDB server port.
+	Port uint32 `mapstructure:"port"`
 
 	// TlsCertPath is the path to the TLS certificate to use for HTTPS requests.
 	TlsCertPath string `mapstructure:"tls_cert_path"`
