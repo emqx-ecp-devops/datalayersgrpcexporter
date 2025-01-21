@@ -76,13 +76,16 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	}
 	partitionStr := strings.Join(w.partitionKeys, ", ")
 
-	sql = fmt.Sprintf(`
-    create table if not exists %s.%s (
+	sqlCreateTable := `CREATE TABLE %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         %s
         timestamp key(ts)
-				PARTITION BY HASH(ts, %s) PARTITIONS %d
-    );`, w.db, w.table, columsStr, partitionStr, w.partitionNum)
+    )
+    PARTITION BY HASH(%s) PARTITIONS %d
+    ENGINE=TimeSeries;
+	`
+	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, columsStr, partitionStr, w.partitionNum)
+
 	_, err = w.client.Execute(sql)
 	if err != nil {
 		fmt.Println("Failed to create table: ", err)
