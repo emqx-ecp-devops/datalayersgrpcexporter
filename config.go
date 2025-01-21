@@ -66,6 +66,8 @@ type Config struct {
 	Table string `mapstructure:"table"`
 	// Columns is the mapping of span attribute keys to Datalayers column names.
 	Columns map[string]string `mapstructure:"columns"`
+	// PartitionKeys are the span attributes to use for partitioning.
+	PartitionKeys []string `mapstructure:"partition_keys"`
 	// Username is used to optionally specify the basic auth username
 	Username string `mapstructure:"username"`
 	// Password is used to optionally specify the basic auth password
