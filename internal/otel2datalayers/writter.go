@@ -6,7 +6,6 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"go.opentelemetry.io/collector/component"
 )
