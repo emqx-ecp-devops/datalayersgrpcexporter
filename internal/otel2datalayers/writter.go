@@ -6,6 +6,7 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/component"
 )
@@ -73,20 +74,17 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 			columsStr += fmt.Sprintf("`%s` %s ,", k, v)
 		}
 	}
-	// partitionStr := strings.Join(w.partitionKeys, ", ")
-	// if partitionStr == "" {
-	// 	partitionStr = "ts"
-	// }
+	partitionStr := strings.Join(w.partitionKeys, ", ")
 
 	sqlCreateTable := `CREATE TABLE %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         %s
         timestamp key(ts)
     )
-
+    PARTITION BY HASH(%s) PARTITIONS %d
     ENGINE=TimeSeries;
 	`
-	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, columsStr)
+	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, columsStr, partitionStr, w.partitionNum)
 
 	_, err = w.client.Execute(sql)
 	if err != nil {
