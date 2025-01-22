@@ -75,6 +75,9 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 		}
 	}
 	partitionStr := strings.Join(w.partitionKeys, ", ")
+	if partitionStr == "" {
+		partitionStr = "ts"
+	}
 
 	sqlCreateTable := `CREATE TABLE %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
