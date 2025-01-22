@@ -5,6 +5,7 @@ package otel2datalayers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -74,7 +75,14 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 			columsStr += fmt.Sprintf("`%s` %s ,", k, v)
 		}
 	}
-	partitionStr := strings.Join(w.partitionKeys, ", ")
+	partitionStr := ""
+	if len(w.partitionKeys) == 0 {
+		return errors.New("partition keys is empty")
+	}
+	for _, v := range w.partitionKeys {
+		partitionStr += fmt.Sprintf("`%s`,", v)
+	}
+	partitionStr = strings.TrimSuffix(partitionStr, ",")
 
 	sqlCreateTable := `CREATE TABLE %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
