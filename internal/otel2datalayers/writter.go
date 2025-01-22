@@ -71,7 +71,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	columsStr := ""
 	if len(w.columns) > 0 {
 		for k, v := range w.columns {
-			columsStr += fmt.Sprintf("'%s' %s ,", k, v)
+			columsStr += fmt.Sprintf("`%s` %s ,", k, v)
 		}
 	}
 	partitionStr := strings.Join(w.partitionKeys, ", ")
