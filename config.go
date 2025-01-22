@@ -68,6 +68,9 @@ type Config struct {
 	Columns map[string]string `mapstructure:"columns"`
 	// PartitionKeys are the span attributes to use for partitioning.
 	PartitionKeys []string `mapstructure:"partition_keys"`
+
+	// PartitionNum is the number of partitions to use for partitioning.
+	PartitionNum int `mapstructure:"partition_num"`
 	// Username is used to optionally specify the basic auth username
 	Username string `mapstructure:"username"`
 	// Password is used to optionally specify the basic auth password

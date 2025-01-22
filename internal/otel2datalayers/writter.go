@@ -27,7 +27,7 @@ type DatalayerWritter struct {
 	payloadMaxBytes   int
 }
 
-func NewDatalayerWritter(host, username, password, tlsPath, db, table string, partitions []string, port uint32, columns map[string]string, payloadMaxLines, payloadMaxBytes int,
+func NewDatalayerWritter(host, username, password, tlsPath, db, table string, partitions []string, partitionNum int, port uint32, columns map[string]string, payloadMaxLines, payloadMaxBytes int,
 	telemetrySettings component.TelemetrySettings) (*DatalayerWritter, error) {
 	clientConfig := &ClientConfig{
 		Host:     host,
@@ -49,6 +49,7 @@ func NewDatalayerWritter(host, username, password, tlsPath, db, table string, pa
 		table:             table,
 		columns:           columns,
 		partitionKeys:     partitions,
+		partitionNum:      partitionNum,
 		telemetrySettings: telemetrySettings,
 		payloadMaxLines:   payloadMaxLines,
 		payloadMaxBytes:   payloadMaxBytes,
