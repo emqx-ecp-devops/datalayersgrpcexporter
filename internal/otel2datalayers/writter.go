@@ -105,3 +105,11 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 
 	return nil
 }
+
+var columnsMap map[string]struct{}
+var oldColumnsLenght = 0
+
+func (w *DatalayerWritter) AlterTableWithColumnsMap() {
+	// todo: 根据 len(columnsMap) > oldColumnsLenght 时， 在 concatenateSql 中自动触发修改表
+
+}
