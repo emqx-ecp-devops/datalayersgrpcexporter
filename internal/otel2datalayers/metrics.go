@@ -108,18 +108,21 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	table := w.db + "." + w.table
 	columns := ""
-	for k, v := range w.columns {
-		columns += fmt.Sprintf("`%s_%s`,", k, v)
-	}
-	columns = strings.TrimSuffix(columns, ",")
+	_ = fmt.Sprintf("Recieve new metrics: %v\n", metrics)
 
 	values := ""
+
 	for _, metric := range metrics {
+		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
 		values += fmt.Sprintf("%v,", metric.Value)
 	}
+
+	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")
 
 	sql = fmt.Sprintf(sql, table, columns, values)
+	fmt.Println("to execute the sql: ", sql)
+
 	_, err := w.client.Execute(sql)
 	if err != nil {
 		fmt.Println("Failed to insert metrics: ", err)
