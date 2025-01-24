@@ -153,6 +153,7 @@ func newDatalayerWritter(config *Config, telemetrySettings component.TelemetrySe
 		config.DB,
 		config.Table,
 		config.PartitionKeys,
+		config.PartitionNum,
 		config.Port,
 		config.Columns,
 		config.PayloadMaxLines,
