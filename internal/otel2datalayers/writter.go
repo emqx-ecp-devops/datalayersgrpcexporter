@@ -85,7 +85,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	}
 	partitionStr = strings.TrimSuffix(partitionStr, ",")
 
-	sqlCreateTable := `CREATE TABLE %s.%s (
+	sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         %s
         timestamp key(ts)
