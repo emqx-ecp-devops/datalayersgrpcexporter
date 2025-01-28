@@ -5,29 +5,27 @@ package otel2datalayers
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
+	"sync"
 
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 type DatalayerWritter struct {
 	clientConfig *ClientConfig
 	client       *Client
 
-	db            string
-	table         string
-	columns       map[string]string
-	partitionKeys []string
-	partitionNum  int
+	db           string
+	table        string
+	partitionNum int
 
 	telemetrySettings component.TelemetrySettings
 	payloadMaxLines   int
 	payloadMaxBytes   int
 }
 
-func NewDatalayerWritter(host, username, password, tlsPath, db, table string, partitions []string, partitionNum int, port uint32, columns map[string]string, payloadMaxLines, payloadMaxBytes int,
+func NewDatalayerWritter(host, username, password, tlsPath, db, table string, partitionNum int, port uint32, payloadMaxLines, payloadMaxBytes int,
 	telemetrySettings component.TelemetrySettings) (*DatalayerWritter, error) {
 	clientConfig := &ClientConfig{
 		Host:     host,
@@ -47,8 +45,6 @@ func NewDatalayerWritter(host, username, password, tlsPath, db, table string, pa
 		client:            c,
 		db:                db,
 		table:             table,
-		columns:           columns,
-		partitionKeys:     partitions,
 		partitionNum:      partitionNum,
 		telemetrySettings: telemetrySettings,
 		payloadMaxLines:   payloadMaxLines,
@@ -69,31 +65,15 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	}
 
 	// Creates a table.
-	// If w.colums is empty, will use the automatic schema later. It will use all metrics as fields.
-	columsStr := ""
-	if len(w.columns) > 0 {
-		for k, v := range w.columns {
-			columsStr += fmt.Sprintf("`%s` %s ,", k, v)
-		}
-	}
-	partitionStr := ""
-	if len(w.partitionKeys) == 0 {
-		return errors.New("partition keys is empty")
-	}
-	for _, v := range w.partitionKeys {
-		partitionStr += fmt.Sprintf("`%s`,", v)
-	}
-	partitionStr = strings.TrimSuffix(partitionStr, ",")
-
 	sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        %s
+        instantce_name STRING,
         timestamp key(ts)
     )
     PARTITION BY HASH(%s) PARTITIONS %d
     ENGINE=TimeSeries;
 	`
-	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, columsStr, partitionStr, w.partitionNum)
+	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, "instantce_name", w.partitionNum)
 
 	_, err = w.client.Execute(sql)
 	if err != nil {
@@ -106,10 +86,81 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	return nil
 }
 
-var columnsMap map[string]struct{}
-var oldColumnsLenght = 0
+type compareMap struct {
+	mu            sync.RWMutex
+	columnsMap    map[string]int32
+	oldColumnsMap map[string]int32
+}
 
-func (w *DatalayerWritter) AlterTableWithColumnsMap() {
+func (c compareMap) ResetColumnsMap() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.columnsMap = map[string]int32{}
+}
+
+func (c compareMap) ResetOldColumnsMap() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.oldColumnsMap = map[string]int32{}
+}
+
+// todo: other functions
+func (c compareMap) AddColumnsMap(key string, value int32) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.columnsMap[key] = value
+}
+
+func (c compareMap) SwapColumnsMap() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.oldColumnsMap = c.columnsMap
+	c.columnsMap = map[string]int32{}
+}
+
+var CompareObject = compareMap{}
+
+func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 	// todo: 根据 len(columnsMap) > oldColumnsLenght 时， 在 concatenateSql 中自动触发修改表
+	// 这样配置文件中就不需要配置表字段了
+	if len(CompareObject.columnsMap) > len(CompareObject.oldColumnsMap) {
 
+		for k, v := range CompareObject.columnsMap {
+			if _, ok := CompareObject.oldColumnsMap[k]; !ok {
+
+				sqlAlterTable := `ALTER TABLE %s.%s ADD COLUMN %s_%d %s;`
+				sql := fmt.Sprintf(sqlAlterTable, w.db, w.table, k, v, tableTypeString(v))
+
+				_, err := w.client.Execute(sql)
+				if err != nil {
+					fmt.Println("Failed to update table: ", err)
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func tableTypeString(t int32) string {
+	switch t {
+	case int32(pmetric.MetricTypeGauge):
+		return "DOUBLE"
+	case int32(pmetric.MetricTypeSum):
+		return "UINT64"
+	case int32(pmetric.MetricTypeHistogram):
+		return "STRING"
+	case int32(pmetric.MetricTypeSummary):
+		return "STRING"
+	case int32(pmetric.MetricTypeExponentialHistogram):
+		return "STRING"
+	default:
+		return "STRING"
+	}
+	return "UINT64"
 }

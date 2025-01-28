@@ -64,10 +64,6 @@ type Config struct {
 	DB string `mapstructure:"db"`
 	// Table is the name of the Datalayers table that telemetry will be written to.
 	Table string `mapstructure:"table"`
-	// Columns is the mapping of span attribute keys to Datalayers column names.
-	Columns map[string]string `mapstructure:"columns"`
-	// PartitionKeys are the span attributes to use for partitioning.
-	PartitionKeys []string `mapstructure:"partition_keys"`
 
 	// PartitionNum is the number of partitions to use for partitioning.
 	PartitionNum int `mapstructure:"partition_num"`
