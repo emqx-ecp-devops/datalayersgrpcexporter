@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/emqx-ecp-devops/datalayersgrpcexporter/internal/otel2datalayers"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -113,10 +112,8 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	values := ""
 
-	c := otel2datalayers.CompareObject
-
 	for _, metric := range metrics {
-		c.AddColumnsMap(metric.Key, metric.Type)
+		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
 		values += fmt.Sprintf("%v,", metric.Value)
 	}
@@ -124,7 +121,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		fmt.Println("Failed to update table: ", err)
 		return
 	}
-	c.SwapColumnsMap()
+	CompareObject.SwapColumnsMap()
 
 	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")
