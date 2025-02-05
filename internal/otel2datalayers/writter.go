@@ -165,7 +165,7 @@ func tableTypeString(t int32) string {
 	case int32(pmetric.MetricTypeSummary):
 		return "STRING"
 	case int32(pmetric.MetricTypeExponentialHistogram):
-		return "STRING"
+		return "DOUBLE"
 	default:
 		return "STRING"
 	}
