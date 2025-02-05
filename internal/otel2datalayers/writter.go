@@ -122,7 +122,11 @@ func (c compareMap) SwapColumnsMap() {
 	c.columnsMap = map[string]int32{}
 }
 
-var CompareObject = compareMap{}
+var CompareObject = compareMap{
+	mu:            sync.RWMutex{},
+	columnsMap:    map[string]int32{},
+	oldColumnsMap: map[string]int32{},
+}
 
 func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 	// todo: 根据 len(columnsMap) > oldColumnsLenght 时， 在 concatenateSql 中自动触发修改表
