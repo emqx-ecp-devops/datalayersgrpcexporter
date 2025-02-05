@@ -122,7 +122,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 				temp = strconv.FormatFloat(v, 'f', -1, 64)
 			}
 
-			values += temp
+			values += temp + ","
 		} else {
 			values += fmt.Sprintf("%s,", metric.Value)
 		}
