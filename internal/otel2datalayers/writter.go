@@ -147,6 +147,8 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 	return nil
 }
 
+// tableTypeString returns the string representation of the metric type
+// todo: 需确认类型映射是否正确
 func tableTypeString(t int32) string {
 	switch t {
 	case int32(pmetric.MetricTypeGauge):
