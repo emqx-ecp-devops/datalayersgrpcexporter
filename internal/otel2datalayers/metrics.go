@@ -117,7 +117,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
 		if metric.Type <= int32(pmetric.MetricTypeSum) {
-			temp := fmt.Sprintf("%v", metric.Value)
+			temp := fmt.Sprintf("%.2f", metric.Value)
 			if v, ok := metric.Value.(float64); ok {
 				temp = strconv.FormatFloat(v, 'f', -1, 64)
 			}
