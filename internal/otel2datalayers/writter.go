@@ -157,9 +157,9 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 func tableTypeString(t int32) string {
 	switch t {
 	case int32(pmetric.MetricTypeGauge):
-		return "UINT64"
+		return "DOUBLE"
 	case int32(pmetric.MetricTypeSum):
-		return "UINT64"
+		return "DOUBLE"
 	case int32(pmetric.MetricTypeHistogram):
 		return "STRING"
 	case int32(pmetric.MetricTypeSummary):
