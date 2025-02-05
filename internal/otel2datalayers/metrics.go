@@ -115,7 +115,12 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	for _, metric := range metrics {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
-		values += fmt.Sprintf("%v,", metric.Value)
+		if metric.Type <= int32(pmetric.MetricTypeSum) {
+			values += fmt.Sprintf("%d,", metric.Value)
+		} else {
+			values += fmt.Sprintf("%s,", metric.Value)
+		}
+
 	}
 	if err := w.AlterTableWithColumnsMap(); err != nil {
 		fmt.Println("Failed to update table: ", err)
