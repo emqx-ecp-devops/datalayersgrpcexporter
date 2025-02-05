@@ -161,13 +161,12 @@ func tableTypeString(t int32) string {
 	case int32(pmetric.MetricTypeSum):
 		return "DOUBLE"
 	case int32(pmetric.MetricTypeHistogram):
-		return "STRING"
+		return "DOUBLE"
 	case int32(pmetric.MetricTypeSummary):
-		return "STRING"
+		return "DOUBLE"
 	case int32(pmetric.MetricTypeExponentialHistogram):
 		return "DOUBLE"
 	default:
 		return "STRING"
 	}
-	return "UINT64"
 }
