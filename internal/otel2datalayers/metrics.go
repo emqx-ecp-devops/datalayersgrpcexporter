@@ -144,7 +144,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	_, err := w.client.Execute(sql) // todo: maybe need to set the instance_name field
 	if err != nil {
-		fmt.Println("Failed to insert metrics: ", err)
+		fmt.Printf("\nFailed to insert metrics: %s\nsql: %s\n\n", err.Error(), sql)
 		return
 	}
 
