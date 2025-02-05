@@ -138,7 +138,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	if !strings.Contains(columns, "instantce_name") {
 		columns += "`instantce_name`,"
-		values += "default,"
+		values += "`default`,"
 	}
 
 	columns = strings.TrimSuffix(columns, ",")
