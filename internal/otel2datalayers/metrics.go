@@ -136,11 +136,6 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	}
 	CompareObject.SwapColumnsMap()
 
-	if !strings.Contains(columns, "instantce_name") {
-		columns += "`instantce_name`,"
-		values += "`default`,"
-	}
-
 	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")
 

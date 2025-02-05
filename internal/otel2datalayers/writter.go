@@ -68,7 +68,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	// Creates a table.
 	sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        instantce_name STRING,
+        instantce_name STRING DEFAULT 'Unknown',
         timestamp key(ts)
     )
     PARTITION BY HASH(%s) PARTITIONS %d
