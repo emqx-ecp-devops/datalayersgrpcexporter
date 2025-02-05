@@ -115,7 +115,12 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	for _, metric := range metrics {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
-		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
+		if metric.Key == "instantce_name" {
+			columns += fmt.Sprintf("`%s`,", metric.Key)
+		} else {
+			columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
+		}
+
 		if metric.Type <= int32(pmetric.MetricTypeSummary) {
 			temp := ""
 			if v, ok := metric.Value.(float64); ok {
