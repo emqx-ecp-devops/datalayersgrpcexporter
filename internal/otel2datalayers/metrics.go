@@ -3,6 +3,7 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -116,7 +117,12 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
 		if metric.Type <= int32(pmetric.MetricTypeSum) {
-			values += fmt.Sprintf("%d,", metric.Value)
+			temp := fmt.Sprintf("%v", metric.Value)
+			if v, ok := metric.Value.(float64); ok {
+				temp = strconv.FormatFloat(v, 'f', -1, 64)
+			}
+
+			values += fmt.Sprintf("%s,", temp)
 		} else {
 			values += fmt.Sprintf("%s,", metric.Value)
 		}
