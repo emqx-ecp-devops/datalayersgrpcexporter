@@ -6,6 +6,7 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"go.opentelemetry.io/collector/component"
@@ -140,7 +141,7 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 				sql := fmt.Sprintf(sqlAlterTable, w.db, w.table, k, v, tableTypeString(v))
 
 				_, err := w.client.Execute(sql)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "has already exist") {
 					fmt.Println("Failed to update table: ", err)
 					return err
 				}
