@@ -116,7 +116,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	for _, metric := range metrics {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
-		if metric.Type <= int32(pmetric.MetricTypeSum) || metric.Type == int32(pmetric.MetricTypeExponentialHistogram) {
+		if metric.Type <= int32(pmetric.MetricTypeSummary) {
 			temp := ""
 			if v, ok := metric.Value.(float64); ok {
 				temp = strconv.FormatFloat(v, 'f', -1, 64)
