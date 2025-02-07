@@ -128,7 +128,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	for k, v := range metrics.Attributes {
 		CompareObject.AddColumnsMap(k, 0)
 		columns += fmt.Sprintf("`%s_0`,", k)
-		values += fmt.Sprintf("`%s`,", v)
+		values += fmt.Sprintf("'%s',", v)
 	}
 
 	for _, metric := range metrics.Lines {
@@ -149,7 +149,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 			values += fmt.Sprintf("%s,", temp)
 		} else {
-			values += fmt.Sprintf("`%s`,", metric.Value)
+			values += fmt.Sprintf("'%s',", metric.Value)
 		}
 
 	}
