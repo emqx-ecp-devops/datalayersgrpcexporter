@@ -137,6 +137,8 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	values := ""
 
+	lineColumnsMap := map[string]int32{}
+
 	for k, v := range metrics.Attributes {
 		// 用 service.name 字段分表， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 resource_type
 		if k == "service.name" {
@@ -144,7 +146,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		}
 
 		if k != "service.instance.id" {
-			CompareObject.AddColumnsMap(k, 0)
+			lineColumnsMap[k] = 0
 			columns += fmt.Sprintf("'%s_0',", k)
 		} else {
 			columns += fmt.Sprintf("'%s',", "instance_id")
@@ -154,7 +156,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	}
 
 	for _, metric := range metrics.Lines {
-		CompareObject.AddColumnsMap(metric.Key, metric.Type)
+		lineColumnsMap[metric.Key] = metric.Type
 		// 用 service.instance.id 做主键 ， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 rcluster_name~${host}
 		if metric.Key == "instance_id" {
 			columns += fmt.Sprintf("'%s',", "instance_id")
@@ -176,11 +178,10 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		}
 
 	}
-	if err := w.AlterTableWithColumnsMap(); err != nil {
+	if err := w.AlterTableWithColumnsMap(tableName, lineColumnsMap); err != nil {
 		fmt.Println("Failed to update table: ", err)
 		return
 	}
-	CompareObject.SwapColumnsMap()
 
 	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")

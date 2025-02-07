@@ -115,58 +115,43 @@ func (w *DatalayerWritter) CheckTable(tableName string) error {
 	return nil
 }
 
-type compareMap struct {
-	mu            *sync.RWMutex
-	columnsMap    map[string]int32
-	oldColumnsMap map[string]int32
+type CompareMap struct {
+	mu         *sync.RWMutex
+	columnsMap map[string]int32
 }
 
-func (c compareMap) ResetColumnsMap() {
+func (c CompareMap) ResetColumnsMap() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.columnsMap = map[string]int32{}
 }
 
-func (c compareMap) ResetOldColumnsMap() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.oldColumnsMap = map[string]int32{}
-}
-
 // todo: other functions
-func (c compareMap) AddColumnsMap(key string, value int32) {
+func (c CompareMap) AddColumnsMap(key string, value int32) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.columnsMap[key] = value
 }
 
-func (c compareMap) SwapColumnsMap() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+var MultiCompareObject = map[string]CompareMap{}
 
-	c.oldColumnsMap = c.columnsMap
-	c.columnsMap = map[string]int32{}
-}
+func (w *DatalayerWritter) AlterTableWithColumnsMap(tableName string, lineColumnsMap map[string]int32) error {
+	compareObject, ok := MultiCompareObject[tableName]
+	if !ok {
+		compareObject = CompareMap{
+			mu:         &sync.RWMutex{},
+			columnsMap: map[string]int32{"instance_id": 0},
+		}
+		MultiCompareObject[tableName] = compareObject
+	}
 
-var CompareObject = compareMap{
-	mu:         &sync.RWMutex{},
-	columnsMap: map[string]int32{},
-
-	// 有了 "instance_id" 后， 建表就不会再次重复创建了
-	oldColumnsMap: map[string]int32{"instance_id": 0},
-}
-
-func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 	// todo: 根据 len(columnsMap) > oldColumnsLenght 时， 在 concatenateSql 中自动触发修改表
 	// 这样配置文件中就不需要配置表字段了
-	if len(CompareObject.columnsMap) > len(CompareObject.oldColumnsMap) {
-
-		for k, v := range CompareObject.columnsMap {
-			if _, ok := CompareObject.oldColumnsMap[k]; !ok {
-
+	if len(lineColumnsMap) > 0 {
+		for k, v := range lineColumnsMap {
+			if _, ok := compareObject.columnsMap[k]; !ok {
 				sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN '%s_%d' %s;"
 				sql := fmt.Sprintf(sqlAlterTable, w.db, w.table, k, v, tableTypeString(v))
 
@@ -175,6 +160,7 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 					fmt.Println("Failed to update table: ", err)
 					return err
 				}
+				compareObject.AddColumnsMap(k, v)
 			}
 		}
 	}
