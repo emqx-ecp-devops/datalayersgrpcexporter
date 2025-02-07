@@ -88,7 +88,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 }
 
 type compareMap struct {
-	mu            sync.RWMutex
+	mu            *sync.RWMutex
 	columnsMap    map[string]int32
 	oldColumnsMap map[string]int32
 }
@@ -124,7 +124,7 @@ func (c compareMap) SwapColumnsMap() {
 }
 
 var CompareObject = compareMap{
-	mu:            sync.RWMutex{},
+	mu:            &sync.RWMutex{},
 	columnsMap:    map[string]int32{},
 	oldColumnsMap: map[string]int32{},
 }

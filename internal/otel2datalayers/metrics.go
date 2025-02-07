@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
@@ -38,28 +39,39 @@ var MetricsSchemata = map[string]MetricsSchema{
 }
 
 // use to store metrics data for temporary
-type MetricsMultipleLines []MetricsSingleLine
+type MetricsMultipleLines struct {
+	Lines      []MetricsSingleLine
+	Attributes map[string]string
+}
 type MetricsSingleLine struct {
-	Key      string
-	Value    interface{}
-	Type     int32
-	Metadata map[string]any
+	Key   string
+	Value interface{}
+	Type  int32
 }
 
 func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 	// TODO: add metrics processing, Splice SQL and store it in datalayers.
-	newLines := MetricsMultipleLines{}
+	newLines := MetricsMultipleLines{
+		Lines:      []MetricsSingleLine{},
+		Attributes: map[string]string{},
+	}
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		rm := md.ResourceMetrics().At(i)
+
+		attrs := rm.Resource().Attributes()
+		attrs.Range(func(k string, v pcommon.Value) bool {
+			newLines.Attributes[k] = v.AsString()
+			return true
+		})
+
 		for j := 0; j < rm.ScopeMetrics().Len(); j++ {
 			ilm := rm.ScopeMetrics().At(j)
 			for k := 0; k < ilm.Metrics().Len(); k++ {
 				m := ilm.Metrics().At(k)
 
 				metricsSingleLine := MetricsSingleLine{
-					Key:      m.Name(),
-					Type:     int32(m.Type()),
-					Metadata: m.Metadata().AsRaw(),
+					Key:  m.Name(),
+					Type: int32(m.Type()),
 				}
 
 				switch m.Type() {
@@ -77,7 +89,7 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 					metricsSingleLine.Value = nil
 				}
 
-				newLines = append(newLines, metricsSingleLine)
+				newLines.Lines = append(newLines.Lines, metricsSingleLine)
 			}
 		}
 	}
@@ -113,7 +125,13 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	values := ""
 
-	for _, metric := range metrics {
+	for k, v := range metrics.Attributes {
+		CompareObject.AddColumnsMap(k, 0)
+		columns += fmt.Sprintf("`%s_0`,", k)
+		values += fmt.Sprintf("%s,", v)
+	}
+
+	for _, metric := range metrics.Lines {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		if metric.Key == "instantce_name" {
 			columns += fmt.Sprintf("`%s`,", metric.Key)
