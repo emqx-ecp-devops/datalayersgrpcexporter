@@ -138,15 +138,20 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	values := ""
 
 	for k, v := range metrics.Attributes {
-		CompareObject.AddColumnsMap(k, 0)
-		columns += fmt.Sprintf("'%s_0',", k)
+		if k != "service.instance.id" {
+			CompareObject.AddColumnsMap(k, 0)
+			columns += fmt.Sprintf("'%s_0',", k)
+		} else {
+			columns += fmt.Sprintf("'%s',", "instance_id")
+		}
+
 		values += fmt.Sprintf("'%s',", v)
 	}
 
 	for _, metric := range metrics.Lines {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		// 用 service.instance.id 做主键 ， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 rcluster_name~${host}
-		if metric.Key == "instance_id" || metric.Key == "service.instance.id" {
+		if metric.Key == "instance_id" {
 			columns += fmt.Sprintf("'%s',", "instance_id")
 		} else {
 			columns += fmt.Sprintf("'%s_%d',", metric.Key, metric.Type)
