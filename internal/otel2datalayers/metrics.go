@@ -178,10 +178,6 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		}
 
 	}
-	if err := w.AlterTableWithColumnsMap(tableName, lineColumnsMap); err != nil {
-		fmt.Println("Failed to update table: ", err)
-		return
-	}
 
 	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")
@@ -190,6 +186,11 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	err := w.CheckTable(tableName)
 	if err != nil {
 		fmt.Printf("\nFailed to check table: %s\nsql: %s\n\n", err.Error(), sql)
+		return
+	}
+
+	if err := w.AlterTableWithColumnsMap(tableName, lineColumnsMap); err != nil {
+		fmt.Println("Failed to update table: ", err)
 		return
 	}
 
