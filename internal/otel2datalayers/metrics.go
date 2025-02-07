@@ -51,14 +51,15 @@ type MetricsSingleLine struct {
 
 func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 	// TODO: add metrics processing, Splice SQL and store it in datalayers.
-	newLines := MetricsMultipleLines{
-		Lines:      []MetricsSingleLine{},
-		Attributes: map[string]string{},
-	}
-
-	deduplicateMap := map[string]any{}
 
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
+		newLines := MetricsMultipleLines{
+			Lines:      []MetricsSingleLine{},
+			Attributes: map[string]string{},
+		}
+
+		deduplicateMap := map[string]any{}
+
 		rm := md.ResourceMetrics().At(i)
 
 		attrs := rm.Resource().Attributes()
@@ -103,9 +104,9 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 				newLines.Lines = append(newLines.Lines, metricsSingleLine)
 			}
 		}
+		enqueueNewlines(newLines)
 	}
 
-	enqueueNewlines(newLines)
 	return nil
 }
 
