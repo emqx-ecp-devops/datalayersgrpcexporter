@@ -129,18 +129,15 @@ func (c CompareMap) ResetColumnsMap() {
 
 // todo: other functions
 func (c CompareMap) AddColumnsMap(key string, value int32) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.columnsMap[key] = value
 }
 
-var MultiCompareObject = map[string]CompareMap{}
+var MultiCompareObject = map[string]*CompareMap{}
 
 func (w *DatalayerWritter) AlterTableWithColumnsMap(tableName string, lineColumnsMap map[string]int32) error {
 	compareObject, ok := MultiCompareObject[tableName]
 	if !ok {
-		compareObject = CompareMap{
+		compareObject = &CompareMap{
 			mu:         &sync.RWMutex{},
 			columnsMap: map[string]int32{"instance_id": 0},
 		}
