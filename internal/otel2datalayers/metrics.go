@@ -56,6 +56,8 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 		Attributes: map[string]string{},
 	}
 
+	deduplicateMap := map[string]any{}
+
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		rm := md.ResourceMetrics().At(i)
 
@@ -64,8 +66,6 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 			newLines.Attributes[k] = v.AsString()
 			return true
 		})
-
-		deduplicateMap := map[string]any{}
 
 		for j := 0; j < rm.ScopeMetrics().Len(); j++ {
 			ilm := rm.ScopeMetrics().At(j)
