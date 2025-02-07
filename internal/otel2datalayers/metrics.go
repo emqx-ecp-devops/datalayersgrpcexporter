@@ -140,7 +140,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	for k, v := range metrics.Attributes {
 		// 用 service.name 字段分表， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 resource_type
 		if k == "service.name" {
-			tableName = fmt.Sprintf("%s,", v)
+			tableName = v
 		}
 
 		if k != "service.instance.id" {
