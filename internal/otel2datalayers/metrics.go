@@ -65,7 +65,7 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 		attrs := rm.Resource().Attributes()
 		attrs.Range(func(k string, v pcommon.Value) bool {
 			if len(v.AsString()) > 0 {
-				newLines.Attributes[k] += " | " + v.AsString()
+				newLines.Attributes[k] = v.AsString()
 			}
 			return true
 		})
@@ -130,8 +130,8 @@ func (w *DatalayerWritter) ProcessMetrics(ctx context.Context) {
 
 func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	sql := "INSERT INTO %s (%s) VALUES (%s);"
+	tableName := w.table
 
-	table := w.db + "." + w.table
 	columns := ""
 	_ = fmt.Sprintf("Recieve new metrics: %v\n", metrics)
 
@@ -145,10 +145,16 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	for _, metric := range metrics.Lines {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
-		if metric.Key == "instantce_name" {
-			columns += fmt.Sprintf("'%s',", metric.Key)
+		// 用 service.instance.id 做主键 ， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 rcluster_name~${host}
+		if metric.Key == "instance_id" || metric.Key == "service.instance.id" {
+			columns += fmt.Sprintf("'%s',", "instance_id")
 		} else {
 			columns += fmt.Sprintf("'%s_%d',", metric.Key, metric.Type)
+		}
+
+		// 用 service.name 字段分表， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 resource_type
+		if metric.Key == "service.name" {
+			tableName = fmt.Sprintf("%s,", metric.Value)
 		}
 
 		if metric.Type <= int32(pmetric.MetricTypeSummary) {
@@ -174,10 +180,17 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	columns = strings.TrimSuffix(columns, ",")
 	values = strings.TrimSuffix(values, ",")
 
+	table := w.db + "." + tableName
+	err := w.CheckTable(tableName)
+	if err != nil {
+		fmt.Printf("\nFailed to check table: %s\nsql: %s\n\n", err.Error(), sql)
+		return
+	}
+
 	sql = fmt.Sprintf(sql, table, columns, values)
 	fmt.Println("to execute the sql: ", sql)
 
-	_, err := w.client.Execute(sql) // todo: maybe need to set the instance_name field
+	_, err = w.client.Execute(sql) // todo: maybe need to set the instance_name field
 	if err != nil {
 		fmt.Printf("\nFailed to insert metrics: %s\nsql: %s\n\n", err.Error(), sql)
 		return

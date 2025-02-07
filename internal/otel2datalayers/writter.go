@@ -56,6 +56,7 @@ func NewDatalayerWritter(host, username, password, tlsPath, db, table string, pa
 // Start implements component.StartFunc
 func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error {
 	// TODO: to check the database and tables is existed? Create without existing.
+	tableMap[w.db] = nil
 
 	// Creates a database.
 	sql := fmt.Sprintf("create database if not exists %s;", w.db)
@@ -68,13 +69,13 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	// Creates a table.
 	sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
         ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        instantce_name STRING DEFAULT 'Unknown',
+        instance_id STRING DEFAULT 'Unknown',
         timestamp key(ts)
     )
     PARTITION BY HASH(%s) PARTITIONS %d
     ENGINE=TimeSeries;
 	`
-	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, "instantce_name", w.partitionNum)
+	sql = fmt.Sprintf(sqlCreateTable, w.db, w.table, "instance_id", w.partitionNum)
 
 	_, err = w.client.Execute(sql)
 	if err != nil {
@@ -83,6 +84,33 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	}
 
 	go w.ProcessMetrics(ctx)
+
+	return nil
+}
+
+var tableMap = map[string]any{}
+
+func (w *DatalayerWritter) CheckTable(tableName string) error {
+	if _, ok := tableMap[tableName]; !ok {
+		// Creates a table.
+		sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
+				ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				instance_id STRING DEFAULT 'Unknown',
+				timestamp key(ts)
+		)
+		PARTITION BY HASH(%s) PARTITIONS %d
+		ENGINE=TimeSeries;
+		`
+		sql := fmt.Sprintf(sqlCreateTable, w.db, tableName, "instance_id", w.partitionNum)
+
+		_, err := w.client.Execute(sql)
+		if err != nil {
+			fmt.Println("Failed to create table: ", err)
+			return err
+		}
+
+		tableMap[tableName] = nil
+	}
 
 	return nil
 }
@@ -124,9 +152,11 @@ func (c compareMap) SwapColumnsMap() {
 }
 
 var CompareObject = compareMap{
-	mu:            &sync.RWMutex{},
-	columnsMap:    map[string]int32{},
-	oldColumnsMap: map[string]int32{},
+	mu:         &sync.RWMutex{},
+	columnsMap: map[string]int32{},
+
+	// 有了 "instance_id" 后， 建表就不会再次重复创建了
+	oldColumnsMap: map[string]int32{"instance_id": 0},
 }
 
 func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
