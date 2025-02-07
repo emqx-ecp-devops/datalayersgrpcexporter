@@ -137,7 +137,7 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap() error {
 		for k, v := range CompareObject.columnsMap {
 			if _, ok := CompareObject.oldColumnsMap[k]; !ok {
 
-				sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN `%s_%d` %s;"
+				sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN '%s_%d' %s;"
 				sql := fmt.Sprintf(sqlAlterTable, w.db, w.table, k, v, tableTypeString(v))
 
 				_, err := w.client.Execute(sql)

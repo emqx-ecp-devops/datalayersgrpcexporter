@@ -55,6 +55,7 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 		Lines:      []MetricsSingleLine{},
 		Attributes: map[string]string{},
 	}
+
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		rm := md.ResourceMetrics().At(i)
 
@@ -64,10 +65,18 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 			return true
 		})
 
+		deduplicateMap := map[string]any{}
+
 		for j := 0; j < rm.ScopeMetrics().Len(); j++ {
 			ilm := rm.ScopeMetrics().At(j)
 			for k := 0; k < ilm.Metrics().Len(); k++ {
 				m := ilm.Metrics().At(k)
+
+				if _, ok := deduplicateMap[m.Name()]; ok {
+					continue
+				} else {
+					deduplicateMap[m.Name()] = nil
+				}
 
 				metricsSingleLine := MetricsSingleLine{
 					Key:  m.Name(),
@@ -127,16 +136,16 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 	for k, v := range metrics.Attributes {
 		CompareObject.AddColumnsMap(k, 0)
-		columns += fmt.Sprintf("`%s_0`,", k)
+		columns += fmt.Sprintf("'%s_0',", k)
 		values += fmt.Sprintf("'%s',", v)
 	}
 
 	for _, metric := range metrics.Lines {
 		CompareObject.AddColumnsMap(metric.Key, metric.Type)
 		if metric.Key == "instantce_name" {
-			columns += fmt.Sprintf("`%s`,", metric.Key)
+			columns += fmt.Sprintf("'%s',", metric.Key)
 		} else {
-			columns += fmt.Sprintf("`%s_%d`,", metric.Key, metric.Type)
+			columns += fmt.Sprintf("'%s_%d',", metric.Key, metric.Type)
 		}
 
 		if metric.Type <= int32(pmetric.MetricTypeSummary) {
