@@ -64,7 +64,7 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 		attrs := rm.Resource().Attributes()
 		attrs.Range(func(k string, v pcommon.Value) bool {
 			if len(v.AsString()) > 0 {
-				newLines.Attributes[k] = v.AsString()
+				newLines.Attributes[k] += " | " + v.AsString()
 			}
 			return true
 		})
