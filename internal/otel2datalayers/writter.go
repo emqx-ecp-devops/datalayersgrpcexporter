@@ -56,7 +56,7 @@ func NewDatalayerWritter(host, username, password, tlsPath, db, table string, pa
 // Start implements component.StartFunc
 func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error {
 	// TODO: to check the database and tables is existed? Create without existing.
-	tableMap[w.db] = nil
+	tableMap[w.table] = nil
 
 	// Creates a database.
 	sql := fmt.Sprintf("create database if not exists %s;", w.db)
