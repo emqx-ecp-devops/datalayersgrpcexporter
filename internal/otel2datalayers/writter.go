@@ -150,7 +150,7 @@ func (w *DatalayerWritter) AlterTableWithColumnsMap(tableName string, lineColumn
 		for k, v := range lineColumnsMap {
 			if _, ok := compareObject.columnsMap[k]; !ok {
 				sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN '%s_%d' %s;"
-				sql := fmt.Sprintf(sqlAlterTable, w.db, w.table, k, v, tableTypeString(v))
+				sql := fmt.Sprintf(sqlAlterTable, w.db, tableName, k, v, tableTypeString(v))
 
 				_, err := w.client.Execute(sql)
 				if err != nil && !strings.Contains(err.Error(), "has already exist") {
