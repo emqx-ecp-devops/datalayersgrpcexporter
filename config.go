@@ -60,11 +60,6 @@ type Config struct {
 	// TlsCertPath is the path to the TLS certificate to use for HTTPS requests.
 	TlsCertPath string `mapstructure:"tls_cert_path"`
 
-	// DB is used to specify the name of the V1 InfluxDB database that telemetry will be written to.
-	DB string `mapstructure:"db"`
-	// Table is the name of the Datalayers table that telemetry will be written to.
-	Table string `mapstructure:"table"`
-
 	// PartitionNum is the number of partitions to use for partitioning.
 	PartitionNum int `mapstructure:"partition_num"`
 	// Username is used to optionally specify the basic auth username

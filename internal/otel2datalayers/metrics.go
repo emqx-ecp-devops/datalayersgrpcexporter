@@ -3,7 +3,6 @@ package otel2datalayers
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -44,14 +43,13 @@ type MetricsMultipleLines struct {
 	Attributes map[string]string
 }
 type MetricsSingleLine struct {
-	Key   string
-	Value interface{}
-	Type  int32
+	Key      string
+	Value    interface{}
+	Type     int32
+	Metadata map[string]string
 }
 
 func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
-	// TODO: add metrics processing, Splice SQL and store it in datalayers.
-
 	for i := 0; i < md.ResourceMetrics().Len(); i++ {
 		newLines := MetricsMultipleLines{
 			Lines:      []MetricsSingleLine{},
@@ -82,9 +80,15 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 				}
 
 				metricsSingleLine := MetricsSingleLine{
-					Key:  m.Name(),
-					Type: int32(m.Type()),
+					Key:      m.Name(),
+					Type:     int32(m.Type()),
+					Metadata: map[string]string{},
 				}
+
+				m.Metadata().Range(func(k string, v pcommon.Value) bool {
+					metricsSingleLine.Metadata[k] = v.AsString()
+					return true
+				})
 
 				switch m.Type() {
 				case pmetric.MetricTypeGauge:
@@ -129,78 +133,56 @@ func (w *DatalayerWritter) ProcessMetrics(ctx context.Context) {
 }
 
 func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
-	sql := "INSERT INTO %s (%s) VALUES (%s);"
-	tableName := w.table
+	dbName := ""
+	partitions := []string{}
+	fields := []string{}
 
-	columns := ""
-	_ = fmt.Sprintf("Recieve new metrics: %v\n", metrics)
-
-	values := ""
-
-	lineColumnsMap := map[string]int32{}
-
+	partitionFieldValues := []string{}
 	for k, v := range metrics.Attributes {
 		// 用 service.name 字段分表， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 resource_type
 		if k == "service.name" {
-			tableName = v
+			dbName = "metrics_" + v
 		}
-
-		if k != "service.instance.id" {
-			lineColumnsMap[k] = 0
-			columns += fmt.Sprintf("'%s_0',", k)
-		} else {
-			columns += fmt.Sprintf("'%s',", "instance_id")
-		}
-
-		values += fmt.Sprintf("'%s',", v)
+		partitions = append(partitions, k)
+		partitionFieldValues = append(partitionFieldValues, v)
+	}
+	if dbName == "" {
+		return // todo: 处理没有 service.name 的情况
 	}
 
 	for _, metric := range metrics.Lines {
-		lineColumnsMap[metric.Key] = metric.Type
-		// 用 service.instance.id 做主键 ， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 rcluster_name~${host}
-		if metric.Key == "instance_id" {
-			columns += fmt.Sprintf("'%s',", "instance_id")
-		} else {
-			columns += fmt.Sprintf("'%s_%d',", metric.Key, metric.Type)
+		tableName := metric.Key
+		valueType := metric.Type
+		value := metric.Value
+		meta := metric.Metadata
+
+		metaValues := []string{}
+		for k, v := range meta {
+			fields = append(fields, k)
+			metaValues = append(metaValues, v)
 		}
 
-		if metric.Type <= int32(pmetric.MetricTypeSummary) {
-			temp := ""
-			if v, ok := metric.Value.(float64); ok {
-				temp = strconv.FormatFloat(v, 'f', -1, 64)
-			} else {
-				temp = fmt.Sprintf("%d", metric.Value)
-			}
+		err := w.CheckDBAndTable(dbName, tableName, partitions, fields, valueType)
+		if err != nil {
+			fmt.Printf("\nFailed to check table: %s", err.Error())
+			return
+		}
 
-			values += fmt.Sprintf("%s,", temp)
-		} else {
-			values += fmt.Sprintf("'%s',", metric.Value)
+		sql := `INSERT INTO %s.%s (%s) VALUES (%s)`
+		columns := strings.Join(append(partitions, fields...), ",")
+		values := strings.Join(append(partitionFieldValues, metaValues...), ",")
+
+		columns = columns + ", value"
+		values = values + ", " + fmt.Sprintf("%v", value)
+
+		sql = fmt.Sprintf(sql, dbName, tableName, columns, values)
+		fmt.Println("to execute the sql: ", sql)
+
+		_, err = w.client.Execute(sql) // todo: maybe need to set the instance_name field
+		if err != nil {
+			fmt.Printf("\nFailed to insert metrics: %s\nsql: %s\n\n", err.Error(), sql)
+			return
 		}
 
 	}
-
-	columns = strings.TrimSuffix(columns, ",")
-	values = strings.TrimSuffix(values, ",")
-
-	table := w.db + "." + tableName
-	err := w.CheckTable(tableName)
-	if err != nil {
-		fmt.Printf("\nFailed to check table: %s\nsql: %s\n\n", err.Error(), sql)
-		return
-	}
-
-	if err := w.AlterTableWithColumnsMap(tableName, lineColumnsMap); err != nil {
-		fmt.Println("Failed to update table: ", err)
-		return
-	}
-
-	sql = fmt.Sprintf(sql, table, columns, values)
-	fmt.Println("to execute the sql: ", sql)
-
-	_, err = w.client.Execute(sql) // todo: maybe need to set the instance_name field
-	if err != nil {
-		fmt.Printf("\nFailed to insert metrics: %s\nsql: %s\n\n", err.Error(), sql)
-		return
-	}
-
 }
