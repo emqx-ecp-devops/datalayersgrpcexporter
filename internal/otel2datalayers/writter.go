@@ -82,6 +82,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	// 	return err
 	// }
 
+	//todo: 可以配置并发数
 	go w.ProcessMetrics(ctx)
 
 	return nil
