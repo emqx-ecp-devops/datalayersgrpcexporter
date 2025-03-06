@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -17,9 +16,6 @@ import (
 type DatalayerWritter struct {
 	clientConfig *ClientConfig
 	client       *Client
-
-	db           string
-	table        string
 	partitionNum int
 
 	telemetrySettings component.TelemetrySettings
@@ -88,32 +84,7 @@ func (w *DatalayerWritter) Start(ctx context.Context, host component.Host) error
 	return nil
 }
 
-var tableMap = map[string]map[string]map[string]any{}
-
-func (w *DatalayerWritter) CheckTable(tableName string) error {
-	if _, ok := tableMap[tableName]; !ok {
-		// Creates a table.
-		sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
-				ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				instance_id STRING DEFAULT 'Unknown',
-				timestamp key(ts)
-		)
-		PARTITION BY HASH(%s) PARTITIONS %d
-		ENGINE=TimeSeries;
-		`
-		sql := fmt.Sprintf(sqlCreateTable, w.db, tableName, "instance_id", w.partitionNum)
-
-		_, err := w.client.Execute(sql)
-		if err != nil {
-			fmt.Println("Failed to create table: ", err)
-			return err
-		}
-
-		tableMap[tableName] = nil
-	}
-
-	return nil
-}
+var tableMap = map[string]map[string]map[string]any{} // key: db, value: tableName, value: fieldName
 
 func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fields []string, valueType int32) error {
 	if len(partitions) == 0 {
@@ -207,25 +178,6 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 
 	return nil
 }
-
-type CompareMap struct {
-	mu         *sync.RWMutex
-	columnsMap map[string]int32
-}
-
-func (c CompareMap) ResetColumnsMap() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.columnsMap = map[string]int32{}
-}
-
-// todo: other functions
-func (c CompareMap) AddColumnsMap(key string, value int32) {
-	c.columnsMap[key] = value
-}
-
-var MultiCompareObject = map[string]*CompareMap{}
 
 // tableTypeString returns the string representation of the metric type
 // todo: 需确认类型映射是否正确
