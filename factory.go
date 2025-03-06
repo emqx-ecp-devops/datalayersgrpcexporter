@@ -150,8 +150,6 @@ func newDatalayerWritter(config *Config, telemetrySettings component.TelemetrySe
 		config.Username,
 		config.Password,
 		config.TlsCertPath,
-		config.DB,
-		config.Table,
 		config.PartitionNum,
 		config.Port,
 		config.PayloadMaxLines,
