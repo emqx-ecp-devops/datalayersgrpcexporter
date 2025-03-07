@@ -106,7 +106,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 	}
 
 	dbTables := tableMap[db]
-	if oldFieldsMap, ok := dbTables[tableName]; !ok {
+	if oldFieldsMap, ok := dbTables[tableName]; ok {
 		if len(oldFieldsMap) != 0 {
 			for _, partition := range partitions {
 				if _, ok := oldFieldsMap[partition]; !ok {
