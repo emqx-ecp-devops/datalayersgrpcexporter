@@ -134,46 +134,42 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 					tableMap[db] = dbTables
 				}
 			}
-
-		} else {
-			// Creates a table.
-			sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
+		}
+	} else {
+		// Creates a table.
+		sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
 				ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				value %s,
-			}
-		}
-	}
 				%s
 				timestamp key(ts)
-		)
-		PARTITION BY HASH(%s) PARTITIONS %d
-		ENGINE=TimeSeries;
-		`
-			newFields := map[string]any{}
-			fieldSql := ""
-			partitionKeys := ""
-			for _, partition := range partitions {
-				fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", partition)
-				partitionKeys += fmt.Sprintf("%s,", partition)
-				newFields[partition] = nil
-			}
-			for _, field := range fields {
-				fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", field)
-				newFields[field] = nil
-			}
-			partitionKeys = strings.TrimSuffix(partitionKeys, ",")
-
-			sql := fmt.Sprintf(sqlCreateTable, db, tableName, tableTypeString(valueType), fieldSql, partitionKeys, w.partitionNum)
-
-			_, err := w.client.Execute(sql)
-			if err != nil {
-				fmt.Println("Failed to create table: ", err)
-				return err
-			}
-
-			dbTables[tableName] = newFields
-			tableMap[db] = dbTables
+				)
+				PARTITION BY HASH(%s) PARTITIONS %d
+				ENGINE=TimeSeries;
+				`
+		newFields := map[string]any{}
+		fieldSql := ""
+		partitionKeys := ""
+		for _, partition := range partitions {
+			fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", partition)
+			partitionKeys += fmt.Sprintf("%s,", partition)
+			newFields[partition] = nil
 		}
+		for _, field := range fields {
+			fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", field)
+			newFields[field] = nil
+		}
+		partitionKeys = strings.TrimSuffix(partitionKeys, ",")
+
+		sql := fmt.Sprintf(sqlCreateTable, db, tableName, tableTypeString(valueType), fieldSql, partitionKeys, w.partitionNum)
+
+		_, err := w.client.Execute(sql)
+		if err != nil {
+			fmt.Println("Failed to create table: ", err)
+			return err
+		}
+
+		dbTables[tableName] = newFields
+		tableMap[db] = dbTables
 	}
 
 	return nil
