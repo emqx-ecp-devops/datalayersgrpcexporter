@@ -120,7 +120,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 			for _, field := range fields {
 				if _, ok := oldFieldsMap[field]; !ok {
 					//新增字段
-					sqlAlterTable := `ALTER TABLE %s.%s ADD COLUMN %s STRING DEFAULT '';`
+					sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN %s STRING DEFAULT '';"
 					sql := fmt.Sprintf(sqlAlterTable, db, tableName, field)
 
 					_, err := w.client.Execute(sql)

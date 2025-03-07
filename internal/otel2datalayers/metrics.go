@@ -132,6 +132,10 @@ func (w *DatalayerWritter) ProcessMetrics(ctx context.Context) {
 	}
 }
 
+func addquote(v string) string {
+	return fmt.Sprintf("`%s`", v)
+}
+
 func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	dbName := ""
 	partitions := []string{}
@@ -143,8 +147,8 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		if k == "service.name" {
 			dbName = "metrics_" + v
 		}
-		partitions = append(partitions, k)
-		partitionFieldValues = append(partitionFieldValues, v)
+		partitions = append(partitions, addquote(k))
+		partitionFieldValues = append(partitionFieldValues, addquote(v))
 	}
 	if dbName == "" {
 		return // todo: 处理没有 service.name 的情况
@@ -158,17 +162,17 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 		metaValues := []string{}
 		for k, v := range meta {
-			fields = append(fields, k)
-			metaValues = append(metaValues, v)
+			fields = append(fields, addquote(k))
+			metaValues = append(metaValues, addquote(v))
 		}
 
-		err := w.CheckDBAndTable(dbName, tableName, partitions, fields, valueType)
+		err := w.CheckDBAndTable(dbName, addquote(tableName), partitions, fields, valueType)
 		if err != nil {
 			fmt.Printf("\nFailed to check table: %s", err.Error())
 			return
 		}
 
-		sql := `INSERT INTO %s.%s (%s) VALUES (%s)`
+		sql := "INSERT INTO %s.`%s` (%s) VALUES (%s)"
 		columns := strings.Join(append(partitions, fields...), ",")
 		values := strings.Join(append(partitionFieldValues, metaValues...), ",")
 
