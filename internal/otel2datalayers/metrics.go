@@ -165,6 +165,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		meta := metric.Metadata
 
 		metaValues := []string{}
+		fields = []string{}
 		for k, v := range meta {
 			fields = append(fields, addquote(k))
 			metaValues = append(metaValues, addSingleQuote(v))
@@ -180,7 +181,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		columns := strings.Join(append(partitions, fields...), ",")
 		values := strings.Join(append(partitionFieldValues, metaValues...), ",")
 
-		columns = columns + ", value"
+		columns = columns + ", val"
 		values = values + ", " + fmt.Sprintf("%v", value)
 
 		sql = fmt.Sprintf(sql, dbName, tableName, columns, values)

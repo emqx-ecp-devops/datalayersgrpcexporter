@@ -139,7 +139,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 		// Creates a table.
 		sqlCreateTable := `CREATE TABLE IF NOT EXISTS %s.%s (
 				ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-				value %s,
+				val %s,
 				%s
 				timestamp key(ts)
 				)
