@@ -148,7 +148,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 			dbName = "metrics_" + v
 		}
 		partitions = append(partitions, addquote(k))
-		partitionFieldValues = append(partitionFieldValues, addquote(v))
+		partitionFieldValues = append(partitionFieldValues, v)
 	}
 	if dbName == "" {
 		return // todo: 处理没有 service.name 的情况
@@ -163,7 +163,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		metaValues := []string{}
 		for k, v := range meta {
 			fields = append(fields, addquote(k))
-			metaValues = append(metaValues, addquote(v))
+			metaValues = append(metaValues, v)
 		}
 
 		err := w.CheckDBAndTable(dbName, addquote(tableName), partitions, fields, valueType)
