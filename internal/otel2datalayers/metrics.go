@@ -136,6 +136,10 @@ func addquote(v string) string {
 	return fmt.Sprintf("`%s`", v)
 }
 
+func addSingleQuote(v string) string {
+	return fmt.Sprintf("'%s'", v)
+}
+
 func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	dbName := ""
 	partitions := []string{}
@@ -148,7 +152,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 			dbName = "metrics_" + v
 		}
 		partitions = append(partitions, addquote(k))
-		partitionFieldValues = append(partitionFieldValues, v)
+		partitionFieldValues = append(partitionFieldValues, addSingleQuote(v))
 	}
 	if dbName == "" {
 		return // todo: 处理没有 service.name 的情况
@@ -163,7 +167,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		metaValues := []string{}
 		for k, v := range meta {
 			fields = append(fields, addquote(k))
-			metaValues = append(metaValues, v)
+			metaValues = append(metaValues, addSingleQuote(v))
 		}
 
 		err := w.CheckDBAndTable(dbName, addquote(tableName), partitions, fields, valueType)
