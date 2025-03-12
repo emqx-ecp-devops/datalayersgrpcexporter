@@ -80,41 +80,113 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 					deduplicateMap[m.Name()] = nil
 				}
 
-				for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
-					metricsSingleLine := MetricsSingleLine{
-						Key:        m.Name(),
-						Type:       int32(m.Type()),
-						Metadata:   map[string]string{},
-						Attributes: map[string]string{},
-					}
+				switch m.Type() {
+				case pmetric.MetricTypeGauge:
+					for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
+						metricsSingleLine := MetricsSingleLine{
+							Key:        m.Name(),
+							Type:       int32(m.Type()),
+							Metadata:   map[string]string{},
+							Attributes: map[string]string{},
+						}
 
-					m.Metadata().Range(func(k string, v pcommon.Value) bool {
-						metricsSingleLine.Metadata[k] = v.AsString()
-						return true
-					})
-					m.Gauge().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
-						metricsSingleLine.Attributes[k] = v.AsString()
-						return true
-					})
+						m.Metadata().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Metadata[k] = v.AsString()
+							return true
+						})
+						m.Gauge().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Attributes[k] = v.AsString()
+							return true
+						})
 
-					switch m.Type() {
-					case pmetric.MetricTypeGauge:
 						metricsSingleLine.Value = m.Gauge().DataPoints().At(i).DoubleValue()
-					case pmetric.MetricTypeSum:
-						metricsSingleLine.Value = m.Sum().DataPoints().At(i).DoubleValue()
-					case pmetric.MetricTypeHistogram:
-						metricsSingleLine.Value = m.Histogram().DataPoints().At(i).Sum()
-					case pmetric.MetricTypeSummary:
-						metricsSingleLine.Value = m.Summary().DataPoints().At(i).Sum()
-					case pmetric.MetricTypeExponentialHistogram:
-						metricsSingleLine.Value = m.ExponentialHistogram().DataPoints().At(i).Sum()
-					default:
-						metricsSingleLine.Value = nil
+						newLines.Lines = append(newLines.Lines, metricsSingleLine)
 					}
+				case pmetric.MetricTypeSum:
+					for i := 0; i < m.Sum().DataPoints().Len(); i++ {
+						metricsSingleLine := MetricsSingleLine{
+							Key:        m.Name(),
+							Type:       int32(m.Type()),
+							Metadata:   map[string]string{},
+							Attributes: map[string]string{},
+						}
 
-					newLines.Lines = append(newLines.Lines, metricsSingleLine)
+						m.Metadata().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Metadata[k] = v.AsString()
+							return true
+						})
+						m.Sum().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Attributes[k] = v.AsString()
+							return true
+						})
+
+						metricsSingleLine.Value = m.Sum().DataPoints().At(i).DoubleValue()
+						newLines.Lines = append(newLines.Lines, metricsSingleLine)
+					}
+				case pmetric.MetricTypeHistogram:
+					for i := 0; i < m.Histogram().DataPoints().Len(); i++ {
+						metricsSingleLine := MetricsSingleLine{
+							Key:        m.Name(),
+							Type:       int32(m.Type()),
+							Metadata:   map[string]string{},
+							Attributes: map[string]string{},
+						}
+
+						m.Metadata().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Metadata[k] = v.AsString()
+							return true
+						})
+						m.Histogram().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Attributes[k] = v.AsString()
+							return true
+						})
+
+						metricsSingleLine.Value = m.Histogram().DataPoints().At(i).Sum()
+						newLines.Lines = append(newLines.Lines, metricsSingleLine)
+					}
+				case pmetric.MetricTypeSummary:
+					for i := 0; i < m.Summary().DataPoints().Len(); i++ {
+						metricsSingleLine := MetricsSingleLine{
+							Key:        m.Name(),
+							Type:       int32(m.Type()),
+							Metadata:   map[string]string{},
+							Attributes: map[string]string{},
+						}
+
+						m.Metadata().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Metadata[k] = v.AsString()
+							return true
+						})
+						m.Summary().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Attributes[k] = v.AsString()
+							return true
+						})
+
+						metricsSingleLine.Value = m.Summary().DataPoints().At(i).Sum()
+						newLines.Lines = append(newLines.Lines, metricsSingleLine)
+					}
+				case pmetric.MetricTypeExponentialHistogram:
+					for i := 0; i < m.ExponentialHistogram().DataPoints().Len(); i++ {
+						metricsSingleLine := MetricsSingleLine{
+							Key:        m.Name(),
+							Type:       int32(m.Type()),
+							Metadata:   map[string]string{},
+							Attributes: map[string]string{},
+						}
+
+						m.Metadata().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Metadata[k] = v.AsString()
+							return true
+						})
+						m.ExponentialHistogram().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+							metricsSingleLine.Attributes[k] = v.AsString()
+							return true
+						})
+
+						metricsSingleLine.Value = m.ExponentialHistogram().DataPoints().At(i).Sum()
+						newLines.Lines = append(newLines.Lines, metricsSingleLine)
+					}
 				}
-
 			}
 		}
 		enqueueNewlines(newLines)
