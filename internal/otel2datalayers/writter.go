@@ -186,6 +186,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 
 func (w *DatalayerWritter) getColumnNames(db, table string) (map[string]any, error) {
 	sql := "DESCRIBE %s.%s"
+	sql = fmt.Sprintf(sql, db, table)
 	records, err := w.client.Execute(sql)
 	if err != nil {
 		return nil, err
