@@ -260,7 +260,7 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 
 		err := w.CheckDBAndTable(dbName, addquote(tableName), partitions, fields, valueType)
 		if err != nil {
-			fmt.Printf("\nFailed to check table: %s", err.Error())
+			fmt.Printf("\nFailed to check table: %s \n\n", err.Error())
 			return
 		}
 

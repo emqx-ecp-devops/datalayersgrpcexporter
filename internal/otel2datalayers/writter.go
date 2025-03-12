@@ -127,7 +127,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 					sql := fmt.Sprintf(sqlAlterTable, db, tableName, field)
 
 					records, err := w.client.Execute(sql)
-					if err != nil {
+					if err != nil && !strings.Contains(err.Error(), "has already exist") {
 						fmt.Println("Failed to alter table: ", err)
 						return err
 					}
