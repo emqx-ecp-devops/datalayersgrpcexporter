@@ -177,8 +177,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 			return err
 		}
 
-		dbTables[tableName] = columns
-		tableMap[db] = dbTables
+		tableMap[db][tableName] = columns
 	}
 
 	return nil
