@@ -154,5 +154,6 @@ func newDatalayerWritter(config *Config, telemetrySettings component.TelemetrySe
 		config.Port,
 		config.PayloadMaxLines,
 		config.PayloadMaxBytes,
-		telemetrySettings)
+		telemetrySettings,
+		config.TTL)
 }

@@ -78,6 +78,9 @@ type Config struct {
 	// - telegraf-prometheus-v1
 	// - telegraf-prometheus-v2
 	MetricsSchema string `mapstructure:"metrics_schema"`
+
+	// TTL is the TTL of datalayers's table. the uint is the number of hours.
+	TTL int `mapstructure:"ttl", default:"24"`
 }
 
 func (cfg *Config) Validate() error {

@@ -21,10 +21,11 @@ type DatalayerWritter struct {
 	telemetrySettings component.TelemetrySettings
 	payloadMaxLines   int
 	payloadMaxBytes   int
+	ttl               int
 }
 
 func NewDatalayerWritter(host, username, password, tlsPath string, partitionNum int, port uint32, payloadMaxLines, payloadMaxBytes int,
-	telemetrySettings component.TelemetrySettings) (*DatalayerWritter, error) {
+	telemetrySettings component.TelemetrySettings, ttl int) (*DatalayerWritter, error) {
 	clientConfig := &ClientConfig{
 		Host:     host,
 		Port:     port,
@@ -45,6 +46,7 @@ func NewDatalayerWritter(host, username, password, tlsPath string, partitionNum 
 		telemetrySettings: telemetrySettings,
 		payloadMaxLines:   payloadMaxLines,
 		payloadMaxBytes:   payloadMaxBytes,
+		ttl:               ttl,
 	}, nil
 }
 
@@ -144,7 +146,8 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 				timestamp key(ts)
 				)
 				PARTITION BY HASH(%s) PARTITIONS %d
-				ENGINE=TimeSeries;
+				ENGINE=TimeSeries
+				with (ttl='%dh')
 				`
 		newFields := map[string]any{}
 		fieldSql := ""
@@ -160,7 +163,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 		}
 		partitionKeys = strings.TrimSuffix(partitionKeys, ",")
 
-		sql := fmt.Sprintf(sqlCreateTable, db, tableName, tableTypeString(valueType), fieldSql, partitionKeys, w.partitionNum)
+		sql := fmt.Sprintf(sqlCreateTable, db, tableName, tableTypeString(valueType), fieldSql, partitionKeys, w.partitionNum, w.ttl)
 
 		_, err := w.client.Execute(sql)
 		if err != nil {
