@@ -155,11 +155,9 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 		for _, partition := range partitions {
 			fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", partition)
 			partitionKeys += fmt.Sprintf("%s,", partition)
-			newFields[partition] = nil
 		}
 		for _, field := range fields {
 			fieldSql += fmt.Sprintf("%s STRING DEFAULT '',", field)
-			newFields[field] = nil
 		}
 		partitionKeys = strings.TrimSuffix(partitionKeys, ",")
 
@@ -169,6 +167,17 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 		if err != nil {
 			fmt.Println("Failed to create table: ", err)
 			return err
+		}
+
+		queryNowTable := "show create table %s.%s"
+		queryNowTable = fmt.Sprintf(queryNowTable, db, tableName)
+		ret, err := w.client.Execute(queryNowTable)
+		if err != nil {
+			fmt.Println("Failed to show create table: ", err)
+			return err
+		}
+		for _, one := range ret {
+			fmt.Println(one)
 		}
 
 		dbTables[tableName] = newFields
