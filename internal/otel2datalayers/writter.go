@@ -115,9 +115,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 				if _, ok := oldFieldsMap[partition]; !ok {
 					//todo: 新增字段, PartitionKey 暂时不支持动态修改
 
-					oldFieldsMap[partition] = nil
-					dbTables[tableName] = oldFieldsMap
-					tableMap[db] = dbTables
+					tableMap[db][tableName][partition] = nil
 				}
 			}
 			for _, field := range fields {
@@ -133,9 +131,7 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 					}
 					defer releaseRecords(records)
 
-					oldFieldsMap[field] = nil
-					dbTables[tableName] = oldFieldsMap
-					tableMap[db] = dbTables
+					tableMap[db][tableName][field] = nil
 				}
 			}
 		}
