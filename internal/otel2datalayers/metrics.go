@@ -43,10 +43,11 @@ type MetricsMultipleLines struct {
 	Attributes map[string]string
 }
 type MetricsSingleLine struct {
-	Key      string
-	Value    interface{}
-	Type     int32
-	Metadata map[string]string
+	Key        string
+	Value      interface{}
+	Type       int32
+	Metadata   map[string]string
+	Attributes map[string]string
 }
 
 func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
@@ -79,33 +80,41 @@ func WriteMetrics(ctx context.Context, md pmetric.Metrics) error {
 					deduplicateMap[m.Name()] = nil
 				}
 
-				metricsSingleLine := MetricsSingleLine{
-					Key:      m.Name(),
-					Type:     int32(m.Type()),
-					Metadata: map[string]string{},
+				for i := 0; i < m.Gauge().DataPoints().Len(); i++ {
+					metricsSingleLine := MetricsSingleLine{
+						Key:        m.Name(),
+						Type:       int32(m.Type()),
+						Metadata:   map[string]string{},
+						Attributes: map[string]string{},
+					}
+
+					m.Metadata().Range(func(k string, v pcommon.Value) bool {
+						metricsSingleLine.Metadata[k] = v.AsString()
+						return true
+					})
+					m.Gauge().DataPoints().At(i).Attributes().Range(func(k string, v pcommon.Value) bool {
+						metricsSingleLine.Attributes[k] = v.AsString()
+						return true
+					})
+
+					switch m.Type() {
+					case pmetric.MetricTypeGauge:
+						metricsSingleLine.Value = m.Gauge().DataPoints().At(i).DoubleValue()
+					case pmetric.MetricTypeSum:
+						metricsSingleLine.Value = m.Sum().DataPoints().At(i).DoubleValue()
+					case pmetric.MetricTypeHistogram:
+						metricsSingleLine.Value = m.Histogram().DataPoints().At(i).Sum()
+					case pmetric.MetricTypeSummary:
+						metricsSingleLine.Value = m.Summary().DataPoints().At(i).Sum()
+					case pmetric.MetricTypeExponentialHistogram:
+						metricsSingleLine.Value = m.ExponentialHistogram().DataPoints().At(i).Sum()
+					default:
+						metricsSingleLine.Value = nil
+					}
+
+					newLines.Lines = append(newLines.Lines, metricsSingleLine)
 				}
 
-				m.Metadata().Range(func(k string, v pcommon.Value) bool {
-					metricsSingleLine.Metadata[k] = v.AsString()
-					return true
-				})
-
-				switch m.Type() {
-				case pmetric.MetricTypeGauge:
-					metricsSingleLine.Value = m.Gauge().DataPoints().At(0).DoubleValue()
-				case pmetric.MetricTypeSum:
-					metricsSingleLine.Value = m.Sum().DataPoints().At(0).DoubleValue()
-				case pmetric.MetricTypeHistogram:
-					metricsSingleLine.Value = m.Histogram().DataPoints().At(0).Sum()
-				case pmetric.MetricTypeSummary:
-					metricsSingleLine.Value = m.Summary().DataPoints().At(0).Sum()
-				case pmetric.MetricTypeExponentialHistogram:
-					metricsSingleLine.Value = m.ExponentialHistogram().DataPoints().At(0).Sum()
-				default:
-					metricsSingleLine.Value = nil
-				}
-
-				newLines.Lines = append(newLines.Lines, metricsSingleLine)
 			}
 		}
 		enqueueNewlines(newLines)
@@ -142,30 +151,36 @@ func addSingleQuote(v string) string {
 
 func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 	dbName := ""
-	partitions := []string{}
-	fields := []string{}
-
-	partitionFieldValues := []string{}
+	partitionsMultiple := []string{}
+	partitionFieldValuesMultiple := []string{}
 	for k, v := range metrics.Attributes {
 		// 用 service.name 字段分表， 实际为 Job name 中 resource_type/instance/cluster_name~${host} 的 resource_type
 		if k == "service.name" {
 			dbName = "metrics_" + v
 		}
-		partitions = append(partitions, addquote(k))
-		partitionFieldValues = append(partitionFieldValues, addSingleQuote(v))
+		partitionsMultiple = append(partitionsMultiple, addquote(k))
+		partitionFieldValuesMultiple = append(partitionFieldValuesMultiple, addSingleQuote(v))
 	}
+
 	if dbName == "" {
 		return // todo: 处理没有 service.name 的情况
 	}
 
 	for _, metric := range metrics.Lines {
+		partitions := partitionsMultiple[:]
+		partitionFieldValues := partitionFieldValuesMultiple[:]
+		for k, v := range metric.Attributes {
+			partitions = append(partitions, addquote(k))
+			partitionFieldValues = append(partitionFieldValues, addSingleQuote(v))
+		}
+
 		tableName := metric.Key
 		valueType := metric.Type
 		value := metric.Value
 		meta := metric.Metadata
 
 		metaValues := []string{}
-		fields = []string{}
+		fields := []string{}
 		for k, v := range meta {
 			fields = append(fields, addquote(k))
 			metaValues = append(metaValues, addSingleQuote(v))
