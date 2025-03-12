@@ -98,11 +98,12 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 		sqlCreateDB := "CREATE DATABASE IF NOT EXISTS %s"
 		sql := fmt.Sprintf(sqlCreateDB, db)
 
-		_, err := w.client.Execute(sql)
+		records, err := w.client.Execute(sql)
 		if err != nil {
 			fmt.Println("Failed to create databases: ", err)
 			return err
 		}
+		defer releaseRecords(records)
 
 		tableMap[db] = map[string]map[string]any{}
 	}
@@ -125,11 +126,12 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 					sqlAlterTable := "ALTER TABLE %s.%s ADD COLUMN %s STRING DEFAULT '';"
 					sql := fmt.Sprintf(sqlAlterTable, db, tableName, field)
 
-					_, err := w.client.Execute(sql)
+					records, err := w.client.Execute(sql)
 					if err != nil {
 						fmt.Println("Failed to alter table: ", err)
 						return err
 					}
+					defer releaseRecords(records)
 
 					oldFieldsMap[field] = nil
 					dbTables[tableName] = oldFieldsMap
@@ -149,7 +151,6 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 				ENGINE=TimeSeries
 				with (ttl='%dh')
 				`
-		newFields := map[string]any{}
 		fieldSql := ""
 		partitionKeys := ""
 		for _, partition := range partitions {
@@ -163,28 +164,40 @@ func (w *DatalayerWritter) CheckDBAndTable(db, tableName string, partitions, fie
 
 		sql := fmt.Sprintf(sqlCreateTable, db, tableName, tableTypeString(valueType), fieldSql, partitionKeys, w.partitionNum, w.ttl)
 
-		_, err := w.client.Execute(sql)
+		records, err := w.client.Execute(sql)
 		if err != nil {
 			fmt.Println("Failed to create table: ", err)
 			return err
 		}
+		defer releaseRecords(records)
 
-		queryNowTable := "show create table %s.%s"
-		queryNowTable = fmt.Sprintf(queryNowTable, db, tableName)
-		ret, err := w.client.Execute(queryNowTable)
+		columns, err := w.getColumnNames(db, tableName)
 		if err != nil {
-			fmt.Println("Failed to show create table: ", err)
+			fmt.Println("get colmuns failed, err: ", err)
 			return err
 		}
-		for _, one := range ret {
-			fmt.Println(one)
-		}
 
-		dbTables[tableName] = newFields
+		dbTables[tableName] = columns
 		tableMap[db] = dbTables
 	}
 
 	return nil
+}
+
+func (w *DatalayerWritter) getColumnNames(db, table string) (map[string]any, error) {
+	sql := "DESCRIBE %s.%s"
+	records, err := w.client.Execute(sql)
+	if err != nil {
+		return nil, err
+	}
+	defer releaseRecords(records)
+
+	var columnNames = map[string]any{}
+	schema := records[0].Schema()
+	for _, field := range schema.Fields() {
+		columnNames[addquote(field.Name)] = nil
+	}
+	return columnNames, nil
 }
 
 // tableTypeString returns the string representation of the metric type

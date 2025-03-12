@@ -274,11 +274,12 @@ func (w *DatalayerWritter) concatenateSql(metrics MetricsMultipleLines) {
 		sql = fmt.Sprintf(sql, dbName, tableName, columns, values)
 		fmt.Println("to execute the sql: ", sql)
 
-		_, err = w.client.Execute(sql) // todo: maybe need to set the instance_name field
+		records, err := w.client.Execute(sql) // todo: maybe need to set the instance_name field
 		if err != nil {
 			fmt.Printf("\nFailed to insert metrics: %s\nsql: %s\n\n", err.Error(), sql)
 			return
 		}
+		defer releaseRecords(records)
 
 	}
 }
