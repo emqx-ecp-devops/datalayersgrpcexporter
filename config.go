@@ -80,7 +80,7 @@ type Config struct {
 	MetricsSchema string `mapstructure:"metrics_schema"`
 
 	// TTL is the TTL of datalayers's table. the uint is the number of hours.
-	TTL int `mapstructure:"ttl" default:"24"`
+	TTL int `mapstructure:"ttl"`
 }
 
 func (cfg *Config) Validate() error {

@@ -39,6 +39,10 @@ func NewDatalayerWritter(host, username, password, tlsPath string, partitionNum 
 		return nil, err
 	}
 
+	if ttl == 0 {
+		ttl = 24
+	}
+
 	return &DatalayerWritter{
 		clientConfig:      clientConfig,
 		client:            c,
